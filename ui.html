@@ -64,8 +64,32 @@
   .step.on .box { background:var(--long); border-color:var(--long); color:#06240f }
   .sec { margin-top:12px } .sec h4 { margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim) }
   .sec ul { margin:0; padding-left:18px } .sec li { margin:3px 0 }
-  .levels { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0 }
-  .levels div { background:var(--panel2); border-radius:9px; padding:8px; text-align:center } .levels b { display:block; font-size:15px }
+  .trade { margin:12px 0; padding:10px; border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,var(--panel2),transparent) }
+  .rr { font-weight:650; color:var(--acc); background:#5b8cff1f; padding:2px 8px; border-radius:99px }
+  .ladder { display:grid; gap:6px; margin:8px 0 }
+  .lvl { display:grid; grid-template-columns:60px 1fr auto; align-items:center; gap:8px; text-align:left; padding:8px 10px; border-radius:9px;
+         background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--acc); color:var(--text); cursor:copy; font-weight:400 }
+  .lvl:hover { background:var(--panel2) }
+  .lvl b { font-size:15px; font-variant-numeric:tabular-nums } .lvl .tag { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim) }
+  .lvl.tp { border-left-color:var(--long) } .lvl.tp b { color:var(--long) } .lvl.sl { border-left-color:var(--short) } .lvl.sl b { color:var(--short) }
+  .rrbar { display:flex; height:6px; border-radius:99px; overflow:hidden; background:var(--panel) } .rrbar .risk { background:var(--short) } .rrbar .reward { background:var(--long) }
+  .callout { margin-top:12px; padding:10px 12px; border-radius:10px; background:#5b8cff12; border:1px solid #5b8cff33 }
+  .callout h4 { margin:0 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--acc) }
+  ol.plan { list-style:none; margin:0; padding:0; display:grid; gap:7px }
+  ol.plan li { display:grid; grid-template-columns:20px 1fr; gap:8px; align-items:start; font-size:13px; line-height:1.5 }
+  ol.plan .num { width:20px; height:20px; border-radius:50%; background:var(--acc); color:#fff; font-size:11px; font-weight:650; display:grid; place-items:center }
+  .chartwrap { margin:10px 0; padding:8px; border:1px solid var(--line); border-radius:12px; background:var(--panel) }
+  .chartwrap .seg .tab { padding:3px 9px; font-size:12px }
+  .chart { display:block; width:100%; height:auto; margin-top:6px }
+  .chart .axis { font-size:10px; fill:var(--dim); font-variant-numeric:tabular-nums } .chart .lbl { font-size:10px; font-weight:650; fill:#fff }
+  .notrade { display:grid; gap:2px; margin-top:10px; padding:10px 12px; border-radius:10px; background:var(--panel2); border:1px dashed var(--dim) }
+  .pcard.none::before { background:var(--dim) }
+  .tally { display:flex; flex-wrap:wrap; gap:6px }
+  .chartmsg { height:160px; display:grid; place-items:center }
+  .zoomable { cursor:zoom-in } .zoomable:hover .chart { opacity:.9 }
+  .chart .poi { fill:var(--warn) }
+  .chart.big .axis { font-size:13px } .chart.big .lbl { font-size:13px }
+  mark.hl { background:#5b8cff24; color:var(--text); padding:0 4px; border-radius:4px; font-variant-numeric:tabular-nums }
   .bar { height:4px; background:var(--panel2); border-radius:99px; overflow:hidden; margin:14px 0 8px }
   .bar > div { height:100%; background:linear-gradient(90deg, var(--acc), var(--acc2)) }
   .shimmer { height:10px; border-radius:6px; margin:8px 0; background:linear-gradient(90deg, var(--panel2) 0%, #232a38 50%, var(--panel2) 100%); background-size:200% 100% }
@@ -75,7 +99,7 @@
   .method { white-space:pre-wrap; font-size:12.5px; max-height:320px; overflow:auto; background:var(--bg); padding:12px; border-radius:9px; margin:12px 0 0 }
   .backdrop { position:fixed; inset:0; background:#000a; backdrop-filter:blur(4px); display:grid; place-items:center; padding:16px; z-index:50 }
   .modal { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; width:min(460px, 100%); max-height:90vh; overflow:auto }
-  .modal.wide { width:min(760px, 100%) }
+  .modal.wide { width:min(760px, 100%) } .modal.xl { width:min(1280px, 100%) }
   .toasts { position:fixed; right:16px; bottom:16px; display:grid; gap:8px; z-index:60; max-width:min(420px, calc(100vw - 32px)) }
   .toast { padding:10px 14px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); box-shadow:0 10px 30px #0008 }
   .toast.ok { border-color:#22c55e66 } .toast.error { border-color:#f43f5e88; color:#ffc2cd }
@@ -168,7 +192,7 @@ function Modal({ open, onClose, wide, children }) {
     <AnimatePresence>
       {open && (
         <motion.div className="backdrop" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <motion.div className={`modal ${wide ? "wide" : ""}`} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+          <motion.div className={`modal ${wide === "xl" ? "xl" : wide ? "wide" : ""}`} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
                       initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.96 }} transition={spring}>
             {children}
           </motion.div>
@@ -322,7 +346,7 @@ function JsonForm({ initial, file, onSaved, toast }) {
 function BiasBadge({ bias }) {
   return (
     <motion.span className={`badge ${bias}`} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.1 }}>
-      {bias === "bullish" ? "▲" : bias === "bearish" ? "▼" : "•"} {bias.toUpperCase()}
+      {bias === "bullish" ? "▲ BULLISH" : bias === "bearish" ? "▼ BEARISH" : "⊘ NO TRADE"}
     </motion.span>
   );
 }
@@ -370,6 +394,150 @@ function EntryChecklist({ a }) {
   );
 }
 
+const pipSize = p => p.includes("JPY") ? 0.01 : p.startsWith("XAU") ? 0.1 : 0.0001;
+
+// prices, price ranges and timeframes stand out in Claude's prose
+const HL = /(\b\d+\.\d{2,}(?:\s*[-–]\s*\d+\.\d{2,})?\b|\b(?:M1|M5|M15|M30|H1|H4|D1|W1|Daily|Weekly|CISD|FVG|PDH|PDL)\b)/;
+const Hl = ({ text }) => text.split(HL).map((t, i) => i % 2 ? <mark key={i} className="hl">{t}</mark> : t);
+
+function PlanSteps({ text }) {
+  const steps = text.split(/\n+|(?<=[.!?])\s+(?=[A-Z(])/).map(s => s.replace(/^\s*(\d+[.)]|[-•*])\s*/, "").trim()).filter(Boolean);
+  return (
+    <ol className="plan">
+      {steps.map((s, i) => (
+        <motion.li key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
+          <span className="num">{i + 1}</span><span><Hl text={s} /></span>
+        </motion.li>
+      ))}
+    </ol>
+  );
+}
+
+function TradeLevels({ pair, a, toast }) {
+  const pip = pipSize(pair), long = a.target > a.entry;
+  const risk = Math.abs(a.entry - a.stop) / pip, reward = Math.abs(a.target - a.entry) / pip;
+  const rows = [["Target", a.target, "tp", `+${reward.toFixed(1)} pips`], ["Entry", a.entry, "en", long ? "Buy" : "Sell"], ["Stop", a.stop, "sl", `−${risk.toFixed(1)} pips`]];
+  if (!long) rows.reverse();  // highest price on top, like a chart
+  return (
+    <div className="trade">
+      <div className="row between small">
+        <span className="dim">{long ? "▲ Long" : "▼ Short"} · click a price to copy</span>
+        {risk > 0 && <span className="rr">1 : {(reward / risk).toFixed(1)} R</span>}
+      </div>
+      <div className="ladder">
+        {rows.map(([label, price, cls, note], i) => (
+          <motion.button key={label} className={`lvl ${cls}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}
+                         onClick={() => navigator.clipboard.writeText(String(price)).then(() => toast(`${label} ${price} copied`, "ok"))}>
+            <span className="tag">{label}</span><b>{price}</b><span className="dim small">{note}</span>
+          </motion.button>
+        ))}
+      </div>
+      <div className="rrbar" title={`Risk ${risk.toFixed(1)} pips · Reward ${reward.toFixed(1)} pips`}>
+        <motion.div className="risk" initial={{ width: 0 }} animate={{ width: `${100 * risk / (risk + reward)}%` }} transition={{ duration: 0.6 }} />
+        <motion.div className="reward" initial={{ width: 0 }} animate={{ width: `${100 * reward / (risk + reward)}%` }} transition={{ duration: 0.6 }} />
+      </div>
+    </div>
+  );
+}
+
+const decimals = p => p.includes("JPY") ? 3 : p.startsWith("XAU") ? 2 : 5;
+
+function poiZones(pois) {
+  return pois.flatMap(t => {
+    const m = t.match(/(\d+\.\d{2,})(?:\s*[-–]\s*(\d+\.\d{2,}))?/);
+    if (!m) return [];
+    const a = +m[1], b = m[2] ? +m[2] : a;
+    return [{ lo: Math.min(a, b), hi: Math.max(a, b), label: t }];
+  });
+}
+
+function PriceChart({ pair, a }) {
+  const [tf, setTf] = useState("H1");
+  const [data, setData] = useState(null), [err, setErr] = useState(null);
+  useEffect(() => {
+    setData(null); setErr(null);
+    api("candles", { pair, tf, count: 80 }).then(setData).catch(e => setErr(e.message));
+  }, [pair, tf]);
+
+  const [big, setBig] = useState(false);
+  const trade = a.setup === "entry_ready" && a.entry && a.stop && a.target;
+  const levels = trade ? [[a.target, "TP", "var(--long)"], [a.entry, "Entry", "var(--acc)"], [a.stop, "SL", "var(--short)"]] : [];
+  const dp = decimals(pair);
+
+  // viewBox matches the rendered size in each mode, so text stays a readable pixel size when enlarged
+  const draw = large => {
+    if (!data?.length) return <div className="chartmsg dim small">{err ? <span className="err">{err}</span> : "Loading candles…"}</div>;
+    const W = large ? 1220 : 600, H = large ? 600 : 240, R = large ? 120 : 70, T = 10, B = 10, ph = large ? 22 : 16;
+    let lo = Math.min(...data.map(d => d[3]), ...levels.map(l => l[0]));
+    let hi = Math.max(...data.map(d => d[2]), ...levels.map(l => l[0]));
+    const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+    const y = p => T + (hi - p) / (hi - lo) * (H - T - B);
+    const cw = (W - R) / data.length, x = i => i * cw + cw / 2;
+    const zones = poiZones(a.points_of_interest).filter(z => z.hi >= lo && z.lo <= hi);
+    const last = data[data.length - 1][4];
+    const tx = (W - R) * 0.72;  // trade box starts here, like a position tool
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className={`chart ${large ? "big" : ""}`} role="img" aria-label={`${pretty(pair)} ${tf} chart with plan levels`}>
+        {(large ? [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] : [0.2, 0.4, 0.6, 0.8]).map(f => {
+          const p = hi - (hi - lo) * f;
+          return <g key={f}><line x1="0" x2={W - R} y1={y(p)} y2={y(p)} stroke="var(--line)" strokeWidth="0.5" />
+            <text x={W - R + 6} y={y(p) + 4} className="axis">{p.toFixed(dp)}</text></g>;
+        })}
+        {zones.map((z, i) => (
+          <g key={i}><title>{z.label}</title>
+            <rect x="0" width={W - R} y={y(Math.min(z.hi, hi))} height={Math.max(2, y(Math.max(z.lo, lo)) - y(Math.min(z.hi, hi)))} fill="var(--warn)" opacity="0.12" />
+            <text x="6" y={y(Math.min(z.hi, hi)) + (large ? 15 : 10)} className="axis poi">
+              {large ? (z.label.length > 110 ? z.label.slice(0, 110) + "…" : z.label) : "POI"}
+            </text>
+          </g>
+        ))}
+        {trade && <>
+          <rect x={tx} width={W - R - tx} y={y(Math.max(a.entry, a.target))} height={Math.abs(y(a.target) - y(a.entry))} fill="var(--long)" opacity="0.14" />
+          <rect x={tx} width={W - R - tx} y={y(Math.max(a.entry, a.stop))} height={Math.abs(y(a.stop) - y(a.entry))} fill="var(--short)" opacity="0.14" />
+        </>}
+        {data.map(([t, o, h, l, c], i) => {
+          const col = c >= o ? "var(--long)" : "var(--short)";
+          return <g key={t}><title>{`${new Date(t).toLocaleString()}\nO ${o}  H ${h}\nL ${l}  C ${c}`}</title>
+            <line x1={x(i)} x2={x(i)} y1={y(h)} y2={y(l)} stroke={col} strokeWidth="1" />
+            <rect x={x(i) - cw * 0.3} width={cw * 0.6} y={y(Math.max(o, c))} height={Math.max(1, Math.abs(y(o) - y(c)))} fill={col} />
+          </g>;
+        })}
+        {levels.map(([p, label, col]) => (
+          <g key={label}>
+            <line x1="0" x2={W - R} y1={y(p)} y2={y(p)} stroke={col} strokeWidth="1.2" strokeDasharray="5 4" />
+            <rect x={W - R + 2} y={y(p) - ph / 2} width={R - 4} height={ph} rx="4" fill={col} />
+            <text x={W - R + 6} y={y(p) + ph / 4} className="lbl">{label} {p.toFixed(dp)}</text>
+          </g>
+        ))}
+        <line x1="0" x2={W - R} y1={y(last)} y2={y(last)} stroke="var(--dim)" strokeWidth="0.6" strokeDasharray="2 3" />
+        <text x={W - R - 4} y={y(last) - 4} textAnchor="end" className="axis">last {last.toFixed(dp)}</text>
+      </svg>
+    );
+  };
+  const header = large => (
+    <div className="row between small gap">
+      <span className="dim">{large && <b style={{ color: "var(--text)", fontSize: 15 }}>{pretty(pair)} · {tf} </b>}
+        {trade ? "Entry · stop · target" : "Price"}{a.points_of_interest.length ? " · POI zones" : ""}</span>
+      <span className="row gap">
+        <Segmented id={`tf-${pair}${large ? "-big" : ""}`} value={tf} onChange={setTf} options={[["M15", "M15"], ["H1", "H1"], ["H4", "H4"], ["D", "D"]]} />
+        {large ? <button className="x" onClick={() => setBig(false)} aria-label="Close">✕</button>
+               : <button className="x" onClick={() => setBig(true)} aria-label="Enlarge chart" title="Enlarge">⤢</button>}
+      </span>
+    </div>
+  );
+  return (
+    <div className="chartwrap">
+      {header(false)}
+      <div className="zoomable" onClick={() => setBig(true)} title="Click to enlarge">{draw(false)}</div>
+      <Modal open={big} onClose={() => setBig(false)} wide="xl">
+        {header(true)}
+        {draw(true)}
+        <p className="dim small" style={{ marginBottom: 0 }}>Hover a candle for OHLC, a band for the full POI note. Esc to close.</p>
+      </Modal>
+    </div>
+  );
+}
+
 function PairCard({ pair, r, now, onRun, toast }) {
   const [open, setOpen] = useState(false);
   const a = r?.analysis, status = r?.status || "idle";
@@ -408,27 +576,28 @@ function PairCard({ pair, r, now, onRun, toast }) {
               <span className="chip">{SETUP[a.setup]}</span>
             </div>
             <EntryChecklist a={a} />
-            <p className="why">{a.bias_reason}</p>
-            {a.setup === "entry_ready" && (
-              <div className="levels">
-                <div><span className="dim small">Entry</span><b>{a.entry}</b></div>
-                <div><span className="dim small">Stop</span><b style={{ color: "var(--short)" }}>{a.stop}</b></div>
-                <div><span className="dim small">Target</span><b style={{ color: "var(--long)" }}>{a.target}</b></div>
+            {(a.bias === "none" || a.setup === "none") && (
+              <div className="notrade">
+                <b>⊘ No trade today — stand aside</b>
+                <span className="dim small">{a.bias === "none" ? "No clear bias: structure is messy or timeframes disagree." : `Bias is ${a.bias}, but the method's setup isn't there.`}</span>
               </div>
             )}
+            <p className="why"><Hl text={a.bias_reason} /></p>
+            <PriceChart pair={pair} a={a} />
+            {a.setup === "entry_ready" && a.entry && a.stop && a.target ? <TradeLevels pair={pair} a={a} toast={toast} /> : null}
+            {a.plan && <div className="callout"><h4>Plan for the next session</h4><PlanSteps text={a.plan} /></div>}
             <button className="link" onClick={() => setOpen(!open)} aria-expanded={open}>
-              {open ? "Hide details" : "Plan, levels & context"}{" "}
+              {open ? "Hide details" : "Levels & context"}{" "}
               <motion.span style={{ display: "inline-block" }} animate={{ rotate: open ? 180 : 0 }}>▾</motion.span>
             </button>
             <Collapse open={open}>
-              <div className="sec"><h4>Plan</h4>{a.plan}</div>
               <div className="sec"><h4>Points of interest</h4>
                 <ul>{a.points_of_interest.map((p, i) => (
-                  <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>{p}</motion.li>
+                  <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}><Hl text={p} /></motion.li>
                 ))}</ul>
               </div>
-              <div className="sec"><h4>Draw on liquidity</h4>{a.draw_on_liquidity}</div>
-              <div className="sec"><h4>Weekly context</h4>{a.weekly_context}</div>
+              <div className="sec"><h4>Draw on liquidity</h4><Hl text={a.draw_on_liquidity} /></div>
+              <div className="sec"><h4>Weekly context</h4><Hl text={a.weekly_context} /></div>
             </Collapse>
           </Fade>
         )}
@@ -468,7 +637,9 @@ function AnalysisTab({ strategies, toast, goAdd }) {
   const ai = strategies.filter(s => s.type === "ai");
   const [file, setFile] = useState(() => store.get("fx.aiFile", null));
   const [results, setResults] = useState(() => store.get("fx.results", {}));
+  const [off, setOff] = useState(() => store.get("fx.offPairs", {}));
   const now = useNow();
+  useEffect(() => store.set("fx.offPairs", off), [off]);
   useEffect(() => store.set("fx.results", Object.fromEntries(Object.entries(results).filter(([, r]) => r.status !== "loading"))), [results]);
   useEffect(() => store.set("fx.aiFile", file), [file]);
 
@@ -489,7 +660,10 @@ function AnalysisTab({ strategies, toast, goAdd }) {
       .then(d => { setResults(r => ({ ...r, [k]: { status: "done", at: Date.now(), ...d } })); toast(`${pretty(pair)} ready: ${d.analysis.bias}`, "ok"); })
       .catch(e => { setResults(r => ({ ...r, [k]: { status: "error", at: Date.now(), error: e.message } })); toast(`${pretty(pair)}: ${e.message}`, "error"); });
   };
-  const idle = s.pairs.filter(p => results[keyOf(p)]?.status !== "loading");
+  const enabled = p => !off[keyOf(p)];
+  const toggle = p => setOff(o => ({ ...o, [keyOf(p)]: enabled(p) }));
+  const on = s.pairs.filter(enabled);
+  const idle = on.filter(p => results[keyOf(p)]?.status !== "loading");
 
   return (
     <Fade className="stack">
@@ -499,15 +673,36 @@ function AnalysisTab({ strategies, toast, goAdd }) {
             ? <Segmented id="strat" value={s.file} onChange={setFile} options={ai.map(x => [x.file, x.name])} />
             : <h3 style={{ margin: 0 }}>{s.name}</h3>}
           <span className="dim small">Preview only: nothing is sent to Telegram. Pairs run in parallel.</span>
+          <span className="row wrap gap">
+            {s.pairs.map(p => (
+              <button key={p} className={`chip ${enabled(p) ? "up" : ""}`} aria-pressed={enabled(p)} onClick={() => toggle(p)}
+                      style={{ cursor: "pointer", opacity: enabled(p) ? 1 : 0.5 }}>
+                {enabled(p) ? "✓" : "○"} {pretty(p)}
+              </button>
+            ))}
+          </span>
         </div>
         <Btn disabled={!idle.length} onClick={() => idle.forEach(run)}>
           Analyze {idle.length === s.pairs.length ? "all" : idle.length} · ~${(idle.length * COST_PER_PAIR).toFixed(2)}
         </Btn>
       </div>
-      <UsdRead pairs={s.pairs} results={results} keyOf={keyOf} />
+      {(() => {
+        const done = on.map(p => results[keyOf(p)]).filter(r => r?.status === "done").map(r => r.analysis);
+        if (!done.length) return null;
+        const n = f => done.filter(f).length;
+        const trade = x => x.bias !== "none" && x.setup !== "none";
+        return (
+          <div className="tally small">
+            <span className="chip up">▲ Buy {n(x => trade(x) && x.bias === "bullish")}</span>
+            <span className="chip down">▼ Sell {n(x => trade(x) && x.bias === "bearish")}</span>
+            <span className="chip">⊘ No trade {n(x => !trade(x))}</span>
+          </div>
+        );
+      })()}
+      <UsdRead pairs={on} results={results} keyOf={keyOf} />
       <LayoutGroup>
         <div className="grid">
-          {s.pairs.map(p => <PairCard key={keyOf(p)} pair={p} r={results[keyOf(p)]} now={now} onRun={() => run(p)} toast={toast} />)}
+          {on.map(p => <PairCard key={keyOf(p)} pair={p} r={results[keyOf(p)]} now={now} onRun={() => run(p)} toast={toast} />)}
         </div>
       </LayoutGroup>
     </Fade>

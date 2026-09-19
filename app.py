@@ -65,6 +65,12 @@ def api(route: str, body: dict):
         s = json.loads(strategy_path(body["file"]).read_text())
         a, bar = daily.analyze(s, body["pair"])
         return {"bar": bar, "analysis": a.model_dump(), "message": daily.message(s, body["pair"], a, bar)}
+    if route == "candles":  # chart data for the result cards; OANDA only, no Claude
+        tf = body.get("tf", "H1")
+        if tf not in ("M15", "H1", "H4", "D"):
+            raise ValueError(f"bad timeframe: {tf!r}")
+        df = scan.candles(body["pair"], tf, min(int(body.get("count", 80)), 300))
+        return [[t.isoformat(), o, h, l, c] for t, o, h, l, c in df[["time", "open", "high", "low", "close"]].itertuples(index=False)]
     if route in ("scan", "daily_run"):  # the real cron jobs, once
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
