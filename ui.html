@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forex Signals</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/framer-motion@13.3.0/dist/framer-motion.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
+<style>
+  :root {
+    --bg:#0b0d12; --panel:#12151d; --panel2:#171b25; --line:#242a36; --text:#e8ebf2; --dim:#8a93a6;
+    --acc:#5b8cff; --acc2:#8b5cf6; --long:#22c55e; --short:#f43f5e; --warn:#f5b83d;
+  }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.55 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body::before { content:""; position:fixed; inset:-20% -10% auto; height:520px; pointer-events:none; z-index:0;
+    background:radial-gradient(40% 60% at 20% 30%, #5b8cff22, transparent 70%), radial-gradient(35% 50% at 80% 20%, #8b5cf61c, transparent 70%); }
+  #root { position:relative; z-index:1; max-width:1100px; margin:auto; padding:28px 16px 80px }
+  h1 { margin:0; font-size:22px; letter-spacing:-.02em } h3 { margin:0 0 6px }
+  .row { display:flex; align-items:center } .wrap { flex-wrap:wrap } .gap { gap:8px } .between { justify-content:space-between } .end { justify-content:flex-end; gap:8px }
+  .dim { color:var(--dim) } .small { font-size:12px } .err { color:var(--short) }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px }
+  .clickable { cursor:pointer } .clickable:hover { border-color:#33405a }
+  .list { display:grid; gap:10px }
+  .clamp { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin:8px 0 0 }
+  button { font:inherit; color:#fff; background:linear-gradient(135deg, var(--acc), var(--acc2)); border:0; border-radius:9px;
+           padding:9px 16px; cursor:pointer; font-weight:500 }
+  button.ghost { background:var(--panel2); border:1px solid var(--line); color:var(--text) }
+  button.danger { background:transparent; border:1px solid #f43f5e66; color:var(--short) }
+  button.link { background:none; color:var(--acc); padding:4px 0 }
+  button.sm { padding:6px 11px; font-size:13px }
+  button:disabled { opacity:.45; cursor:not-allowed }
+  input, textarea { width:100%; font:inherit; color:var(--text); background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:10px 12px; outline:none }
+  input:focus, textarea:focus { border-color:var(--acc) }
+  textarea { font-family:ui-monospace, Consolas, monospace; font-size:12.5px; resize:vertical }
+  label.f { display:grid; gap:6px; font-size:12px; color:var(--dim) }
+  .chip { display:inline-flex; align-items:center; gap:5px; padding:2px 9px; border-radius:99px; border:1px solid var(--line); font-size:12px; background:var(--panel2); white-space:nowrap }
+  .chip.up { color:var(--long); border-color:#22c55e55 } .chip.down { color:var(--short); border-color:#f43f5e55 }
+  .pill { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:3px 10px; border-radius:99px; border:1px solid var(--line); background:var(--panel) }
+  .pill .dot { width:7px; height:7px; border-radius:50% } .pill.ok .dot { background:var(--long); box-shadow:0 0 8px var(--long) } .pill.no .dot { background:var(--short) }
+  .pill.no { color:var(--dim) }
+  header { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px }
+  .logo { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg, var(--acc), var(--acc2)); display:grid; place-items:center; font-weight:700 }
+  .tabs, .seg { display:inline-flex; gap:4px; padding:4px; background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:18px; flex-wrap:wrap }
+  .tab { position:relative; background:none; color:var(--dim); padding:8px 14px; border-radius:9px }
+  .tab.active { color:#fff }
+  .tabpill { position:absolute; inset:0; border-radius:9px; background:var(--panel2); border:1px solid #33405a }
+  .tablabel { position:relative; display:inline-flex; gap:6px; align-items:center }
+  .count { font-size:11px; background:#5b8cff33; color:#b9ccff; border-radius:99px; padding:0 7px }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:14px; align-items:start }
+  .pcard { position:relative; overflow:hidden }
+  .pcard::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--line); transition:background .3s }
+  .pcard.bullish::before { background:var(--long) } .pcard.bearish::before { background:var(--short) }
+  .pair { font-size:18px; font-weight:650; letter-spacing:-.01em }
+  .badge { display:inline-flex; align-items:center; gap:6px; font-weight:650; padding:5px 11px; border-radius:9px; font-size:13px }
+  .badge.bullish { background:#22c55e1f; color:var(--long) } .badge.bearish { background:#f43f5e1f; color:var(--short) } .badge.none { background:var(--panel2); color:var(--dim) }
+  .why { margin:10px 0 }
+  .check { margin-top:12px; padding:10px 12px; border-radius:10px; background:var(--panel2); display:grid; gap:8px }
+  .steps { display:flex; flex-wrap:wrap; gap:6px 14px }
+  .step { display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--dim) } .step.on { color:var(--text) }
+  .box { width:17px; height:17px; border-radius:5px; border:1.5px solid var(--line); display:grid; place-items:center; font-size:11px; font-weight:700 }
+  .step.on .box { background:var(--long); border-color:var(--long); color:#06240f }
+  .sec { margin-top:12px } .sec h4 { margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim) }
+  .sec ul { margin:0; padding-left:18px } .sec li { margin:3px 0 }
+  .levels { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0 }
+  .levels div { background:var(--panel2); border-radius:9px; padding:8px; text-align:center } .levels b { display:block; font-size:15px }
+  .bar { height:4px; background:var(--panel2); border-radius:99px; overflow:hidden; margin:14px 0 8px }
+  .bar > div { height:100%; background:linear-gradient(90deg, var(--acc), var(--acc2)) }
+  .shimmer { height:10px; border-radius:6px; margin:8px 0; background:linear-gradient(90deg, var(--panel2) 0%, #232a38 50%, var(--panel2) 100%); background-size:200% 100% }
+  .pfoot { margin-top:14px; padding-top:12px; border-top:1px solid var(--line) }
+  .usd { padding:12px 16px; border-radius:12px; margin-bottom:14px; border:1px solid var(--line); background:var(--panel) }
+  .usd.mixed { border-color:#f5b83d55 } .usd.mixed b { color:var(--warn) } .usd.aligned b { color:var(--long) }
+  .method { white-space:pre-wrap; font-size:12.5px; max-height:320px; overflow:auto; background:var(--bg); padding:12px; border-radius:9px; margin:12px 0 0 }
+  .backdrop { position:fixed; inset:0; background:#000a; backdrop-filter:blur(4px); display:grid; place-items:center; padding:16px; z-index:50 }
+  .modal { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; width:min(460px, 100%); max-height:90vh; overflow:auto }
+  .modal.wide { width:min(760px, 100%) }
+  .toasts { position:fixed; right:16px; bottom:16px; display:grid; gap:8px; z-index:60; max-width:min(420px, calc(100vw - 32px)) }
+  .toast { padding:10px 14px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); box-shadow:0 10px 30px #0008 }
+  .toast.ok { border-color:#22c55e66 } .toast.error { border-color:#f43f5e88; color:#ffc2cd }
+  .pairchips { display:flex; flex-wrap:wrap; gap:6px; padding:6px; border:1px solid var(--line); border-radius:9px; background:var(--bg) }
+  .pairchips input { border:0; padding:4px; width:auto; flex:1; min-width:120px }
+  .x { background:none; padding:0 0 0 2px; color:var(--dim); font-size:14px; line-height:1 }
+  .sugg { background:var(--panel2); color:var(--dim); border:1px dashed var(--line); padding:2px 9px; border-radius:99px; font-size:12px }
+  .scroll { overflow-x:auto } table { width:100%; border-collapse:collapse } td, th { text-align:left; padding:8px; border-bottom:1px solid var(--line); white-space:nowrap }
+  th { color:var(--dim); font-weight:500; font-size:12px }
+  .empty { text-align:center; padding:40px 16px }
+  pre.log { white-space:pre-wrap; background:var(--bg); padding:12px; border-radius:9px; margin:12px 0 0 }
+  code { font-family:ui-monospace, Consolas, monospace; font-size:12px; background:var(--panel2); padding:1px 6px; border-radius:6px }
+  .stack { display:grid; gap:14px }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback } = React;
+const { motion, AnimatePresence, LayoutGroup } = Motion;
+
+const spring = { type: "spring", stiffness: 420, damping: 34 };
+const COST_PER_PAIR = 0.12;
+const COMMON_PAIRS = ["EUR_USD", "GBP_USD", "USD_JPY", "AUD_USD", "USD_CAD", "USD_CHF", "NZD_USD", "EUR_JPY", "GBP_JPY", "XAU_USD"];
+const KEY_LABEL = { ANTHROPIC_API_KEY: "Anthropic", OPENROUTER_API_KEY: "OpenRouter", OANDA_TOKEN: "OANDA",
+                    TELEGRAM_TOKEN: "Telegram bot", TELEGRAM_CHAT_ID: "Telegram chat" };
+const SETUP = { none: "No setup", watch: "Watch", entry_ready: "Entry ready" };
+
+async function api(route, body = {}) {
+  const r = await fetch("/api/" + route, { method: "POST", body: JSON.stringify(body) });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error);
+  return data;
+}
+
+const store = {
+  get(k, fallback) { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+function useNow() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+  return now;
+}
+
+const ago = ms => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} min`;
+  const h = Math.round(m / 60);
+  return h < 48 ? `${h} h` : `${Math.round(h / 24)} d`;
+};
+// OANDA stamps daily candles with their open time; show the day they closed instead
+const closedOn = bar => new Date(new Date(bar.replace(" ", "T")).getTime() + 864e5).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const pretty = p => p.replace("_", "/");
+// +1 = trade idea makes USD stronger, -1 weaker, 0 = no USD in pair or no bias
+const usdDir = (pair, bias) => {
+  if (bias === "none") return 0;
+  const [base, quote] = pair.split("_"), up = bias === "bullish" ? 1 : -1;
+  return quote === "USD" ? -up : base === "USD" ? up : 0;
+};
+
+const Btn = props => <motion.button whileHover={props.disabled ? {} : { y: -1 }} whileTap={props.disabled ? {} : { scale: 0.96 }} {...props} />;
+
+const Fade = ({ children, ...p }) => (
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }} {...p}>{children}</motion.div>
+);
+
+const Collapse = ({ open, children }) => (
+  <AnimatePresence initial={false}>
+    {open && (
+      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }} style={{ overflow: "hidden" }}>
+        {children}
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+function Modal({ open, onClose, wide, children }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = e => e.key === "Escape" && onClose();
+    addEventListener("keydown", onKey);
+    return () => removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div className="backdrop" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div className={`modal ${wide ? "wide" : ""}`} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+                      initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.96 }} transition={spring}>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function useConfirm() {
+  const [state, setState] = useState({ open: false });
+  const ask = (title, body, danger) => new Promise(resolve => setState({ open: true, title, body, danger, resolve }));
+  const close = ok => { state.resolve?.(ok); setState(s => ({ ...s, open: false })); };
+  const element = (
+    <Modal open={state.open} onClose={() => close(false)}>
+      <h3>{state.title}</h3>
+      <p className="dim">{state.body}</p>
+      <div className="row end">
+        <Btn className="ghost" onClick={() => close(false)}>Cancel</Btn>
+        <Btn className={state.danger ? "danger" : ""} onClick={() => close(true)} autoFocus>Confirm</Btn>
+      </div>
+    </Modal>
+  );
+  return [element, ask];
+}
+
+function Toasts({ items }) {
+  return (
+    <div className="toasts" aria-live="polite">
+      <AnimatePresence>
+        {items.map(t => (
+          <motion.div key={t.id} layout className={`toast ${t.kind}`} transition={spring}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, x: 40 }}>
+            {t.text}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function Segmented({ value, onChange, options, id }) {
+  return (
+    <div className={id === "tabs" ? "tabs" : "seg"} role="tablist">
+      {options.map(([key, label, count]) => (
+        <button key={key} role="tab" aria-selected={value === key} className={`tab ${value === key ? "active" : ""}`} onClick={() => onChange(key)}>
+          {value === key && <motion.span layoutId={id + "-pill"} className="tabpill" transition={spring} />}
+          <span className="tablabel">{label}{count != null && <span className="count">{count}</span>}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function KeyPills({ keys }) {
+  return (
+    <div className="row wrap gap">
+      {Object.entries(keys).map(([k, ok], i) => (
+        <motion.span key={k} className={`pill ${ok ? "ok" : "no"}`} title={ok ? "Set in .env" : "Missing in .env (restart the app after adding it)"}
+                     initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+          <span className="dot" /> {KEY_LABEL[k] || k}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
+function PairInput({ pairs, setPairs }) {
+  const [text, setText] = useState("");
+  const add = raw => {
+    const p = raw.trim().toUpperCase().replace("/", "_");
+    if (/^[A-Z0-9]{3,6}_[A-Z0-9]{3,6}$/.test(p) && !pairs.includes(p)) setPairs([...pairs, p]);
+    setText("");
+  };
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <div className="pairchips">
+        <AnimatePresence>
+          {pairs.map(p => (
+            <motion.span key={p} layout className="chip" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}>
+              {pretty(p)}<button type="button" className="x" aria-label={`Remove ${p}`} onClick={() => setPairs(pairs.filter(x => x !== p))}>×</button>
+            </motion.span>
+          ))}
+        </AnimatePresence>
+        <input value={text} placeholder="Type a pair, press Enter" onChange={e => setText(e.target.value)}
+               onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(text); }
+                                 if (e.key === "Backspace" && !text && pairs.length) setPairs(pairs.slice(0, -1)); }} />
+      </div>
+      <div className="row wrap gap">
+        {COMMON_PAIRS.filter(p => !pairs.includes(p)).map(p => (
+          <motion.button key={p} type="button" className="sugg" whileHover={{ y: -1 }} whileTap={{ scale: 0.94 }} onClick={() => add(p)}>+ {pretty(p)}</motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AiForm({ initial = {}, file, onSaved, toast }) {
+  const [name, setName] = useState(initial.name || "");
+  const [pairs, setPairs] = useState(initial.pairs || ["EUR_USD", "GBP_USD", "USD_JPY"]);
+  const [method, setMethod] = useState(initial.method || "");
+  const [busy, setBusy] = useState(false);
+  const ready = name.trim() && pairs.length && method.trim();
+  const save = async () => {
+    setBusy(true);
+    try {
+      const { file: _, ...rest } = initial;
+      await api("save", { strategy: { ...rest, type: "ai", name: name.trim(), pairs, method: method.trim() }, file });
+      toast(`Saved “${name.trim()}”`, "ok");
+      onSaved();
+    } catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  return (
+    <div className="stack">
+      <label className="f">Name<input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fractal model" /></label>
+      <label className="f">Pairs<PairInput pairs={pairs} setPairs={setPairs} /></label>
+      <label className="f">Method (plain words or a transcript) <span>{method.length.toLocaleString()} chars</span>
+        <textarea rows={12} value={method} onChange={e => setMethod(e.target.value)} placeholder="Explain the method step by step…" />
+      </label>
+      <div className="row end"><Btn disabled={!ready || busy} onClick={save}>{busy ? "Saving…" : "Save AI strategy"}</Btn></div>
+    </div>
+  );
+}
+
+function JsonForm({ initial, file, onSaved, toast }) {
+  const { file: _, ...rest } = initial;
+  const [text, setText] = useState(JSON.stringify(rest, null, 2));
+  const [busy, setBusy] = useState(false);
+  let error = null;
+  try { JSON.parse(text); } catch (e) { error = e.message; }
+  const save = async () => {
+    setBusy(true);
+    try { await api("save", { strategy: JSON.parse(text), file }); toast("Saved", "ok"); onSaved(); }
+    catch (e) { toast(e.message, "error"); }
+    setBusy(false);
+  };
+  return (
+    <div className="stack">
+      <textarea rows={20} value={text} onChange={e => setText(e.target.value)} spellCheck={false} />
+      <div className="row between">
+        <span className={error ? "err small" : "dim small"}>{error ? `Invalid JSON: ${error}` : "Rules are validated on save."}</span>
+        <Btn disabled={!!error || busy} onClick={save}>{busy ? "Saving…" : "Save"}</Btn>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Daily analysis ---------------- */
+
+function BiasBadge({ bias }) {
+  return (
+    <motion.span className={`badge ${bias}`} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.1 }}>
+      {bias === "bullish" ? "▲" : bias === "bearish" ? "▼" : "•"} {bias.toUpperCase()}
+    </motion.span>
+  );
+}
+
+function Confidence({ value }) {
+  const pct = typeof value === "number" ? value : { low: 30, medium: 60, high: 85 }[value] ?? 0;  // older saved results used words
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const controls = Motion.animate(0, pct, { duration: 0.9, ease: "easeOut", onUpdate: v => setShown(Math.round(v)) });
+    return () => controls.stop();
+  }, [pct]);
+  const color = pct >= 70 ? "var(--long)" : pct >= 40 ? "var(--warn)" : "var(--short)";
+  const r = 22, c = 2 * Math.PI * r;
+  return (
+    <div className="row gap" title="Bias confidence from what's known at the daily close: closure quality 35, weekly agreement 30, point of interest 35">
+      <svg width="56" height="56" viewBox="0 0 56 56" aria-label={`${pct}% confidence`}>
+        <circle cx="28" cy="28" r={r} fill="none" stroke="var(--panel2)" strokeWidth="5" />
+        <motion.circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
+                       strokeDasharray={c} transform="rotate(-90 28 28)"
+                       initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - pct / 100) }} transition={{ duration: 0.9, ease: "easeOut" }} />
+        <text x="28" y="32" textAnchor="middle" fontSize="13" fontWeight="650" fill="var(--text)">{shown}%</text>
+      </svg>
+      <div className="small"><div>Bias confidence</div><div className="dim">{pct >= 70 ? "Strong" : pct >= 40 ? "Moderate" : "Weak — stand aside"}</div></div>
+    </div>
+  );
+}
+
+function EntryChecklist({ a }) {
+  if (a.swing_formed === undefined) return null;  // result saved before the checklist existed
+  const steps = [["Swing point", a.swing_formed], ["CISD", a.cisd_formed], ["LTF continuation", a.ltf_continuation]];
+  const done = steps.filter(([, ok]) => ok).length;
+  return (
+    <div className="check">
+      <div className="row between small"><span className="dim">Entry confirmation</span><span className="dim">{done}/3</span></div>
+      <div className="steps">
+        {steps.map(([label, ok], i) => (
+          <motion.div key={label} className={`step ${ok ? "on" : ""}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.1 }}>
+            <motion.span className="box" initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ ...spring, delay: 0.3 + i * 0.1 }}>{ok ? "✓" : ""}</motion.span>
+            {label}
+          </motion.div>
+        ))}
+      </div>
+      {done < 3 && <div className="dim small">Not confirmed yet: wait for these during the next session.</div>}
+    </div>
+  );
+}
+
+function PairCard({ pair, r, now, onRun, toast }) {
+  const [open, setOpen] = useState(false);
+  const a = r?.analysis, status = r?.status || "idle";
+  const expected = 110_000;  // ~observed Claude reasoning time per pair
+  return (
+    <motion.div layout transition={spring} className={`card pcard ${status === "done" ? a.bias : ""}`}>
+      <div className="row between gap">
+        <div>
+          <div className="pair">{pretty(pair)}</div>
+          <div className="dim small">
+            {status === "done" && `${closedOn(r.bar)} close · analyzed ${ago(now - r.at)} ago`}
+            {status === "loading" && `Reading candles… ${ago(now - r.started)}`}
+            {status === "error" && "Failed"}
+            {status === "idle" && "Not analyzed yet"}
+          </div>
+        </div>
+        {status === "done" && <BiasBadge bias={a.bias} />}
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {status === "loading" && (
+          <Fade key="loading">
+            <div className="bar"><motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(95, (now - r.started) / expected * 100)}%` }} transition={{ duration: 1, ease: "linear" }} /></div>
+            {[90, 70, 80].map((w, i) => (
+              <motion.div key={i} className="shimmer" style={{ width: `${w}%` }} animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                          transition={{ repeat: Infinity, duration: 1.6, ease: "linear", delay: i * 0.15 }} />
+            ))}
+            <p className="dim small">Claude takes about two minutes per pair.</p>
+          </Fade>
+        )}
+        {status === "error" && <Fade key="error"><p className="err small">{r.error}</p></Fade>}
+        {status === "done" && (
+          <Fade key="done">
+            <div className="row wrap between gap" style={{ marginTop: 10 }}>
+              <Confidence value={a.confidence} />
+              <span className="chip">{SETUP[a.setup]}</span>
+            </div>
+            <EntryChecklist a={a} />
+            <p className="why">{a.bias_reason}</p>
+            {a.setup === "entry_ready" && (
+              <div className="levels">
+                <div><span className="dim small">Entry</span><b>{a.entry}</b></div>
+                <div><span className="dim small">Stop</span><b style={{ color: "var(--short)" }}>{a.stop}</b></div>
+                <div><span className="dim small">Target</span><b style={{ color: "var(--long)" }}>{a.target}</b></div>
+              </div>
+            )}
+            <button className="link" onClick={() => setOpen(!open)} aria-expanded={open}>
+              {open ? "Hide details" : "Plan, levels & context"}{" "}
+              <motion.span style={{ display: "inline-block" }} animate={{ rotate: open ? 180 : 0 }}>▾</motion.span>
+            </button>
+            <Collapse open={open}>
+              <div className="sec"><h4>Plan</h4>{a.plan}</div>
+              <div className="sec"><h4>Points of interest</h4>
+                <ul>{a.points_of_interest.map((p, i) => (
+                  <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>{p}</motion.li>
+                ))}</ul>
+              </div>
+              <div className="sec"><h4>Draw on liquidity</h4>{a.draw_on_liquidity}</div>
+              <div className="sec"><h4>Weekly context</h4>{a.weekly_context}</div>
+            </Collapse>
+          </Fade>
+        )}
+      </AnimatePresence>
+
+      <div className="row gap pfoot">
+        <Btn className="ghost sm" disabled={status === "loading"} onClick={onRun}>
+          {status === "idle" ? "Analyze" : status === "loading" ? "Running…" : "Re-run"} <span className="dim">~${COST_PER_PAIR.toFixed(2)}</span>
+        </Btn>
+        {status === "done" && (
+          <Btn className="ghost sm" onClick={() => navigator.clipboard.writeText(r.message).then(() => toast(`Copied ${pretty(pair)}`, "ok"))}>Copy text</Btn>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function UsdRead({ pairs, results, keyOf }) {
+  const dirs = pairs.map(p => [p, results[keyOf(p)]]).filter(([, r]) => r?.status === "done")
+                    .map(([p, r]) => [p, usdDir(p, r.analysis.bias)]).filter(([, d]) => d !== 0);
+  if (dirs.length < 2) return null;
+  const up = dirs.some(([, d]) => d > 0), down = dirs.some(([, d]) => d < 0);
+  return (
+    <motion.div layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className={`usd ${up && down ? "mixed" : "aligned"}`}>
+      <div className="row between wrap gap">
+        <span><b>{up && down ? "Mixed dollar read" : up ? "Aligned: dollar stronger" : "Aligned: dollar weaker"}</b>
+          <span className="dim small"> {up && down ? " — the biases disagree on USD, so be selective and avoid doubling up." : " — the biases agree on USD."}</span></span>
+        <span className="row wrap gap">
+          {dirs.map(([p, d]) => <span key={p} className={`chip ${d > 0 ? "up" : "down"}`}>{pretty(p)} → USD {d > 0 ? "▲" : "▼"}</span>)}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+function AnalysisTab({ strategies, toast, goAdd }) {
+  const ai = strategies.filter(s => s.type === "ai");
+  const [file, setFile] = useState(() => store.get("fx.aiFile", null));
+  const [results, setResults] = useState(() => store.get("fx.results", {}));
+  const now = useNow();
+  useEffect(() => store.set("fx.results", Object.fromEntries(Object.entries(results).filter(([, r]) => r.status !== "loading"))), [results]);
+  useEffect(() => store.set("fx.aiFile", file), [file]);
+
+  if (!ai.length) return (
+    <Fade className="card empty">
+      <h3>No AI strategies yet</h3>
+      <p className="dim">Describe a chart-reading method and Claude will read the candles once a day.</p>
+      <Btn onClick={goAdd}>Add a strategy</Btn>
+    </Fade>
+  );
+
+  const s = ai.find(x => x.file === file) || ai[0];
+  const keyOf = pair => `${s.file}|${pair}`;
+  const run = pair => {
+    const k = keyOf(pair);
+    setResults(r => ({ ...r, [k]: { status: "loading", started: Date.now() } }));
+    api("daily", { file: s.file, pair })
+      .then(d => { setResults(r => ({ ...r, [k]: { status: "done", at: Date.now(), ...d } })); toast(`${pretty(pair)} ready: ${d.analysis.bias}`, "ok"); })
+      .catch(e => { setResults(r => ({ ...r, [k]: { status: "error", at: Date.now(), error: e.message } })); toast(`${pretty(pair)}: ${e.message}`, "error"); });
+  };
+  const idle = s.pairs.filter(p => results[keyOf(p)]?.status !== "loading");
+
+  return (
+    <Fade className="stack">
+      <div className="card row between wrap gap">
+        <div className="stack" style={{ gap: 4 }}>
+          {ai.length > 1
+            ? <Segmented id="strat" value={s.file} onChange={setFile} options={ai.map(x => [x.file, x.name])} />
+            : <h3 style={{ margin: 0 }}>{s.name}</h3>}
+          <span className="dim small">Preview only: nothing is sent to Telegram. Pairs run in parallel.</span>
+        </div>
+        <Btn disabled={!idle.length} onClick={() => idle.forEach(run)}>
+          Analyze {idle.length === s.pairs.length ? "all" : idle.length} · ~${(idle.length * COST_PER_PAIR).toFixed(2)}
+        </Btn>
+      </div>
+      <UsdRead pairs={s.pairs} results={results} keyOf={keyOf} />
+      <LayoutGroup>
+        <div className="grid">
+          {s.pairs.map(p => <PairCard key={keyOf(p)} pair={p} r={results[keyOf(p)]} now={now} onRun={() => run(p)} toast={toast} />)}
+        </div>
+      </LayoutGroup>
+    </Fade>
+  );
+}
+
+/* ---------------- Strategies ---------------- */
+
+const Rules = ({ conds }) => conds.length
+  ? conds.map((c, i) => <code key={i} style={{ marginRight: 6 }}>{c.left} {c.op} {c.right}</code>)
+  : <span className="dim">none</span>;
+
+function StrategiesTab({ strategies, reload, toast, confirm, goAdd }) {
+  const [expanded, setExpanded] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const remove = async s => {
+    if (!(await confirm(`Delete “${s.name}”?`, "Its JSON file is removed. This can't be undone.", true))) return;
+    try { await api("delete", { file: s.file }); toast(`Deleted “${s.name}”`, "ok"); reload(); }
+    catch (e) { toast(e.message, "error"); }
+  };
+  if (!strategies.length) return (
+    <Fade className="card empty"><h3>No strategies saved</h3><p className="dim">Extract one from YouTube or describe your own.</p><Btn onClick={goAdd}>Add a strategy</Btn></Fade>
+  );
+  return (
+    <Fade>
+      <LayoutGroup>
+        <div className="list">
+          <AnimatePresence>
+            {strategies.map((s, i) => {
+              const open = expanded === s.file;
+              return (
+                <motion.div key={s.file} layout className="card clickable" onClick={() => setExpanded(open ? null : s.file)}
+                            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.04 } }} exit={{ opacity: 0, scale: 0.96 }}>
+                  <div className="row between wrap gap">
+                    <div className="row wrap gap">
+                      <b style={{ fontSize: 15 }}>{s.name}</b>
+                      <span className="chip">{s.type === "ai" ? "AI · once a day" : `Rules · ${s.timeframe}`}</span>
+                      {s.pairs.map(p => <span key={p} className="chip dim">{pretty(p)}</span>)}
+                    </div>
+                    <div className="row gap" onClick={e => e.stopPropagation()}>
+                      <Btn className="ghost sm" onClick={() => setEditing(s)}>Edit</Btn>
+                      <Btn className="danger sm" onClick={() => remove(s)}>Delete</Btn>
+                    </div>
+                  </div>
+                  {!open && <p className="dim small clamp">{s.type === "ai" ? s.method : s.summary}</p>}
+                  <Collapse open={open}>
+                    {s.type === "ai" ? <pre className="method">{s.method}</pre> : (
+                      <div className="stack" style={{ gap: 6, marginTop: 12 }}>
+                        <span className="dim">{s.summary}</span>
+                        <div><b style={{ color: "var(--long)" }}>LONG</b> when <Rules conds={s.long_when} /></div>
+                        <div><b style={{ color: "var(--short)" }}>SHORT</b> when <Rules conds={s.short_when} /></div>
+                        <div className="dim small">Stop {s.stop_loss} {s.stop_value} · Target {s.take_profit_rr}R
+                          {s.source && <> · <a href={s.source} target="_blank" rel="noreferrer" style={{ color: "var(--acc)" }} onClick={e => e.stopPropagation()}>source video</a></>}</div>
+                      </div>
+                    )}
+                  </Collapse>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      </LayoutGroup>
+      <Modal open={!!editing} onClose={() => setEditing(null)} wide>
+        {editing && <>
+          <h3>Edit “{editing.name}”</h3>
+          {editing.type === "ai"
+            ? <AiForm initial={editing} file={editing.file} toast={toast} onSaved={() => { setEditing(null); reload(); }} />
+            : <JsonForm initial={editing} file={editing.file} toast={toast} onSaved={() => { setEditing(null); reload(); }} />}
+        </>}
+      </Modal>
+    </Fade>
+  );
+}
+
+/* ---------------- Add ---------------- */
+
+function AddTab({ reload, toast, goStrategies }) {
+  const [mode, setMode] = useState("ai");
+  const [url, setUrl] = useState("");
+  const [transcript, setTranscript] = useState("");
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [job, setJob] = useState(null);  // {started} | {result}
+  const [aiPrefill, setAiPrefill] = useState(null);
+  const now = useNow();
+
+  const extract = async () => {
+    setJob({ started: Date.now() });
+    try { setJob({ result: await api("extract", { url, transcript }) }); }
+    catch (e) { setJob(null); toast(e.message, "error"); }
+  };
+  const saved = () => { reload(); goStrategies(); };
+  const res = job?.result, s = res?.strategy;
+
+  return (
+    <Fade className="stack">
+      <Segmented id="mode" value={mode} onChange={setMode} options={[["ai", "Describe it (AI reads charts daily)"], ["yt", "From a YouTube video (fixed rules)"]]} />
+      <AnimatePresence mode="wait">
+        {mode === "ai" ? (
+          <Fade key={"ai" + (aiPrefill ? 1 : 0)} className="card">
+            <p className="dim" style={{ marginTop: 0 }}>For discretionary methods (swing points, fair value gaps, order blocks). After each daily close, Claude reads
+              Weekly, Daily, H1 and M15 candles using your description and returns the bias and plan.</p>
+            <AiForm initial={aiPrefill || {}} toast={toast} onSaved={saved} />
+          </Fade>
+        ) : (
+          <Fade key="yt" className="card stack">
+            <label className="f">YouTube link<input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" /></label>
+            <button className="link" style={{ justifySelf: "start" }} onClick={() => setShowTranscript(!showTranscript)}>
+              {showTranscript ? "Hide transcript box" : "No captions? Paste the transcript"}
+            </button>
+            <Collapse open={showTranscript}><textarea rows={6} value={transcript} onChange={e => setTranscript(e.target.value)} placeholder="Transcript text" /></Collapse>
+            <div className="row gap wrap">
+              <Btn disabled={job?.started || (!url.trim() && !transcript.trim())} onClick={extract}>
+                {job?.started ? `Asking Claude… ${ago(now - job.started)}` : "Extract rules with Claude"}
+              </Btn>
+              {job?.started && <span className="dim small">Usually 1–2 minutes.</span>}
+            </div>
+            <AnimatePresence mode="wait">
+              {s && !s.codifiable && (
+                <Fade key="no" className="card" style={{ borderColor: "#f5b83d55" }}>
+                  <h3 style={{ color: "var(--warn)" }}>Can't be turned into fixed rules</h3>
+                  <p className="dim">{s.not_codifiable_reason}</p>
+                  <Btn onClick={() => { setAiPrefill({ name: s.name, method: res.transcript }); setMode("ai"); setJob(null); }}>
+                    Use it as an AI strategy instead
+                  </Btn>
+                </Fade>
+              )}
+              {s && s.codifiable && (
+                <Fade key="yes" className="stack">
+                  <div className="card">
+                    <div className="row wrap gap"><b style={{ fontSize: 15 }}>{s.name}</b><span className="chip">{s.timeframe}</span>
+                      {s.pairs.map(p => <span key={p} className="chip dim">{pretty(p)}</span>)}</div>
+                    <p>{s.summary}</p>
+                    <div className="sec"><h4 style={{ color: "var(--warn)" }}>Assumptions Claude made — read before saving</h4>
+                      <ul>{s.assumptions.map((a, i) => <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>{a}</motion.li>)}</ul>
+                    </div>
+                  </div>
+                  <JsonForm initial={{ ...s, source: url }} toast={toast} onSaved={saved} />
+                </Fade>
+              )}
+            </AnimatePresence>
+          </Fade>
+        )}
+      </AnimatePresence>
+    </Fade>
+  );
+}
+
+/* ---------------- Scanner ---------------- */
+
+function ScannerTab({ toast, confirm }) {
+  const [rows, setRows] = useState(null);
+  const [log, setLog] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const go = async (name, fn) => { setBusy(name); try { await fn(); } catch (e) { toast(e.message, "error"); } setBusy(null); };
+
+  const check = () => go("check", async () => { setLog(null); setRows(await api("check")); });
+  const real = (route, title, body) => go(route, async () => {
+    if (!(await confirm(title, body))) return;
+    setRows(null); setLog((await api(route)).log); toast("Done", "ok");
+  });
+
+  return (
+    <Fade className="stack">
+      <div className="card stack">
+        <div><h3>Rule-based strategies</h3><span className="dim small">Checked every 5 minutes by <code>scan.py</code> on your VPS.</span></div>
+        <div className="row wrap gap">
+          <Btn disabled={!!busy} onClick={check}>{busy === "check" ? "Fetching candles…" : "Check now (preview)"}</Btn>
+          <Btn className="ghost" disabled={!!busy} onClick={() => real("scan", "Run the real scanner?", "New signals are sent to Telegram and those candles are marked as checked.")}>
+            {busy === "scan" ? "Running…" : "Run scanner once → Telegram"}</Btn>
+        </div>
+      </div>
+      <div className="card stack">
+        <div><h3>AI strategies</h3><span className="dim small">Run once a day by <code>daily.py</code> at 17:07 New York, right after the daily close.</span></div>
+        <div className="row wrap gap">
+          <Btn className="ghost" disabled={!!busy} onClick={() => real("daily_run", "Run the daily AI job?", `Every AI strategy pair is analyzed (~$${COST_PER_PAIR} each) and pairs with a bias go to Telegram. Already-analyzed daily candles are skipped.`)}>
+            {busy === "daily_run" ? "Running… (a few minutes)" : "Run daily AI once → Telegram"}</Btn>
+        </div>
+      </div>
+      <AnimatePresence mode="wait">
+        {rows && (
+          <Fade key="rows" className="card scroll">
+            {!rows.length ? <p className="dim">No rule-based strategies saved. AI strategies are on the Daily analysis tab.</p> : (
+              <table>
+                <thead><tr><th>Strategy</th><th>Pair</th><th>TF</th><th>Last closed candle</th><th>Close</th><th>Signal</th></tr></thead>
+                <tbody>
+                  {rows.map((r, i) => (
+                    <motion.tr key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                      <td>{r.strategy}</td><td>{pretty(r.pair)}</td><td>{r.timeframe}</td>
+                      {r.error ? <td colSpan={3} className="err">{r.error}</td> : <>
+                        <td>{r.candle}</td><td>{r.close}</td>
+                        <td>{r.signals.length ? r.signals.map((x, j) => (
+                          <div key={j}><b style={{ color: x.side === "LONG" ? "var(--long)" : "var(--short)" }}>{x.side}</b> {x.entry} · SL {x.sl} · TP {x.tp}</div>
+                        )) : <span className="dim">—</span>}</td>
+                      </>}
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Fade>
+        )}
+        {log && <Fade key="log" className="card"><pre className="log">{log}</pre></Fade>}
+      </AnimatePresence>
+    </Fade>
+  );
+}
+
+/* ---------------- App ---------------- */
+
+function App() {
+  const [tab, setTab] = useState(() => store.get("fx.tab", "analysis"));
+  const [keys, setKeys] = useState({});
+  const [strategies, setStrategies] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const [confirmEl, confirm] = useConfirm();
+  useEffect(() => store.set("fx.tab", tab), [tab]);
+
+  const toast = useCallback((text, kind = "info") => {
+    const id = Math.random();
+    setToasts(t => [...t.slice(-3), { id, text, kind }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), kind === "error" ? 8000 : 3500);
+  }, []);
+  const reload = useCallback(() => api("strategies").then(setStrategies).catch(e => toast(e.message, "error")), [toast]);
+  useEffect(() => { api("status").then(setKeys).catch(e => toast(e.message, "error")); reload(); }, []);
+
+  const list = strategies || [];
+  const tabs = [
+    ["analysis", "Daily analysis", list.filter(s => s.type === "ai").length || null],
+    ["strategies", "Strategies", list.length || null],
+    ["add", "Add strategy"],
+    ["scanner", "Scanner & Telegram"],
+  ];
+  const props = { strategies: list, reload, toast, confirm, goAdd: () => setTab("add"), goStrategies: () => setTab("strategies") };
+
+  return (
+    <>
+      <header>
+        <div className="row gap">
+          <motion.div className="logo" initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={spring}>↗</motion.div>
+          <div><h1>Forex Signals</h1><div className="dim small">YouTube strategies → candles → Telegram</div></div>
+        </div>
+        <KeyPills keys={keys} />
+      </header>
+      <Segmented id="tabs" value={tab} onChange={setTab} options={tabs} />
+      {strategies === null ? <div className="dim">Loading…</div> : (
+        <AnimatePresence mode="wait">
+          <motion.div key={tab}>
+            {tab === "analysis" && <AnalysisTab {...props} />}
+            {tab === "strategies" && <StrategiesTab {...props} />}
+            {tab === "add" && <AddTab {...props} />}
+            {tab === "scanner" && <ScannerTab {...props} />}
+          </motion.div>
+        </AnimatePresence>
+      )}
+      {confirmEl}
+      <Toasts items={toasts} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
