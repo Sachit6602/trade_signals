@@ -65,6 +65,9 @@ def api(route: str, body: dict):
         s = json.loads(strategy_path(body["file"]).read_text())
         a, bar = daily.analyze(s, body["pair"])
         return {"bar": bar, "analysis": a.model_dump(), "message": daily.message(s, body["pair"], a, bar)}
+    if route == "followup":  # a question about an analysis the page already has; same cost as one analysis
+        s = json.loads(strategy_path(body["file"]).read_text())
+        return {"answer": daily.followup(s, body["pair"], body["analysis"], body.get("history") or [], body["question"])}
     if route == "candles":  # chart data for the result cards; OANDA only, no Claude
         tf = body.get("tf", "H1")
         if tf not in ("M15", "H1", "H4", "D"):

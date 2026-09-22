@@ -31,6 +31,10 @@ class Analysis(BaseModel):
     target: float
 
 
+class Answer(BaseModel):
+    answer: str  # free text, for follow-up questions about an analysis
+
+
 PROMPT = """You are applying a trader's method to {pair}. The daily candle just closed; this runs once per day.
 Follow ONLY the method below. Do not add concepts it doesn't use. If structure is messy, consolidating,
 or timeframes don't align, say so: bias "none" or setup "none". Never force a trade.
@@ -83,7 +87,8 @@ def daily_closure(d: pd.DataFrame) -> str:
     return "inside day (no closure bias)"
 
 
-def analyze(s: dict, pair: str) -> tuple[Analysis, str]:
+def build_prompt(s: dict, pair: str) -> tuple[str, str]:
+    """The analysis prompt (method + candles) and the last daily bar. Follow-up questions reuse it."""
     frames = {tf: candles(pair, tf, n + 1).tail(n).round(5)
               for tf, n in {**DEFAULT_TIMEFRAMES, **s.get("timeframes", {})}.items()}
     d = frames["D"]
@@ -93,11 +98,28 @@ def analyze(s: dict, pair: str) -> tuple[Analysis, str]:
         candles="\n".join(f"<{tf}>\n{df[['time', 'open', 'high', 'low', 'close']].to_csv(index=False)}</{tf}>"
                           for tf, df in frames.items()),
     )
+    return prompt, str(d["time"].iloc[-1])
+
+
+def analyze(s: dict, pair: str) -> tuple[Analysis, str]:
+    prompt, bar = build_prompt(s, pair)
     a = ask(prompt, Analysis)
     a.confidence = max(0, min(100, a.confidence))  # schema can't enforce the range
     if a.setup == "entry_ready" and not (a.swing_formed and a.cisd_formed and a.ltf_continuation):
         a.setup = "watch"  # model contradicted its own checklist; don't signal an entry
-    return a, str(d["time"].iloc[-1])
+    return a, bar
+
+
+def followup(s: dict, pair: str, analysis: dict, history: list[dict], question: str) -> str:
+    """Answer a question about an analysis, with the same candles and method in front of Claude again."""
+    # ponytail: each question re-sends the whole candle set (~one analysis in cost); add prompt caching if that stings
+    prompt, _ = build_prompt(s, pair)
+    qa = "".join(f"\n\nQ: {h['q']}\nA: {h['a']}" for h in history)
+    return ask(
+        f"{prompt}\n\nYou already answered:\n{json.dumps(analysis, indent=2)}{qa}"
+        f"\n\nThe trader now asks:\n{question}\n\n"
+        "Answer in plain text from the method and candles above, quoting exact price levels where they matter. "
+        "Stay inside the method; if the data cannot answer it, say so instead of guessing.", Answer).answer
 
 
 def message(s: dict, pair: str, a: Analysis, bar: str) -> str:

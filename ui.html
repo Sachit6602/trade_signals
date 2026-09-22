@@ -64,6 +64,8 @@
   .step.on .box { background:var(--long); border-color:var(--long); color:#06240f }
   .sec { margin-top:12px } .sec h4 { margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim) }
   .sec ul { margin:0; padding-left:18px } .sec li { margin:3px 0 }
+  .qa { margin:8px 0; padding-left:10px; border-left:2px solid var(--line) }
+  .qa .q { margin:0 0 4px; font-weight:600 } .qa p { margin:0; white-space:pre-wrap }
   .trade { margin:12px 0; padding:10px; border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,var(--panel2),transparent) }
   .rr { font-weight:650; color:var(--acc); background:#5b8cff1f; padding:2px 8px; border-radius:99px }
   .ladder { display:grid; gap:6px; margin:8px 0 }
@@ -538,7 +540,39 @@ function PriceChart({ pair, a }) {
   );
 }
 
-function PairCard({ pair, r, now, onRun, toast }) {
+function FollowUp({ pair, file, a, toast }) {
+  const [q, setQ] = useState("");
+  const [history, setHistory] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    const question = q.trim();
+    if (!question || busy) return;
+    setBusy(true); setQ("");
+    try {
+      const { answer } = await api("followup", { file, pair, analysis: a, history, question });
+      setHistory(h => [...h, { q: question, a: answer }]);
+    } catch (e) { setQ(question); toast(e.message, "error"); }
+    setBusy(false);
+  };
+  return (
+    <div className="sec">
+      <h4>Ask about this analysis <span className="dim">~${COST_PER_PAIR.toFixed(2)} per question</span></h4>
+      {history.map((h, i) => (
+        <motion.div key={i} className="qa" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="q">{h.q}</p><p><Hl text={h.a} /></p>
+        </motion.div>
+      ))}
+      <div className="row gap" style={{ marginTop: 8 }}>
+        <input value={q} onChange={e => setQ(e.target.value)} disabled={busy}
+               placeholder={busy ? "Claude is reading the candles again…" : `Why ${a.bias} on ${pretty(pair)}?`}
+               onKeyDown={e => { if (e.key === "Enter") send(); }} />
+        <Btn className="ghost sm" disabled={busy || !q.trim()} onClick={send}>{busy ? "Thinking…" : "Ask"}</Btn>
+      </div>
+    </div>
+  );
+}
+
+function PairCard({ pair, r, now, onRun, toast, file }) {
   const [open, setOpen] = useState(false);
   const a = r?.analysis, status = r?.status || "idle";
   const expected = 110_000;  // ~observed Claude reasoning time per pair
@@ -599,6 +633,7 @@ function PairCard({ pair, r, now, onRun, toast }) {
               <div className="sec"><h4>Draw on liquidity</h4><Hl text={a.draw_on_liquidity} /></div>
               <div className="sec"><h4>Weekly context</h4><Hl text={a.weekly_context} /></div>
             </Collapse>
+            <FollowUp pair={pair} file={file} a={a} toast={toast} />
           </Fade>
         )}
       </AnimatePresence>
@@ -702,7 +737,7 @@ function AnalysisTab({ strategies, toast, goAdd }) {
       <UsdRead pairs={on} results={results} keyOf={keyOf} />
       <LayoutGroup>
         <div className="grid">
-          {on.map(p => <PairCard key={keyOf(p)} pair={p} r={results[keyOf(p)]} now={now} onRun={() => run(p)} toast={toast} />)}
+          {on.map(p => <PairCard key={keyOf(p)} pair={p} file={s.file} r={results[keyOf(p)]} now={now} onRun={() => run(p)} toast={toast} />)}
         </div>
       </LayoutGroup>
     </Fade>

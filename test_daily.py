@@ -26,3 +26,15 @@ def test_daily_closure():
     assert daily_closure(day(prev, (1.11, 1.13, 1.10, 1.11))).startswith("bearish reversal")
     assert daily_closure(day(prev, (1.10, 1.13, 1.07, 1.10))).startswith("swept both")
     assert daily_closure(day(prev, (1.10, 1.11, 1.09, 1.10))).startswith("inside")
+
+
+def test_followup_carries_method_analysis_and_history(monkeypatch):
+    bars = pd.DataFrame({"time": pd.date_range("2026-09-01", periods=3, tz="UTC"), "open": 1.0, "high": 1.1, "low": 0.9, "close": 1.0})
+    monkeypatch.setattr(daily, "candles", lambda pair, tf, count: bars)
+    seen = {}
+    monkeypatch.setattr(daily, "ask", lambda prompt, model: seen.setdefault("p", prompt) and None or model(answer="because"))
+    out = daily.followup({"method": "swing points only"}, "EUR_USD",
+                         {"bias": "bullish"}, [{"q": "old q", "a": "old a"}], "why bullish?")
+    assert out == "because"
+    for fragment in ("swing points only", '"bias": "bullish"', "old q", "old a", "why bullish?"):
+        assert fragment in seen["p"]
