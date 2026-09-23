@@ -668,14 +668,12 @@ function UsdRead({ pairs, results, keyOf }) {
   );
 }
 
-function AnalysisTab({ strategies, toast, goAdd }) {
+function AnalysisTab({ strategies, toast, goAdd, results, setResults }) {  // results live in App: a run in flight survives switching tabs
   const ai = strategies.filter(s => s.type === "ai");
   const [file, setFile] = useState(() => store.get("fx.aiFile", null));
-  const [results, setResults] = useState(() => store.get("fx.results", {}));
   const [off, setOff] = useState(() => store.get("fx.offPairs", {}));
   const now = useNow();
   useEffect(() => store.set("fx.offPairs", off), [off]);
-  useEffect(() => store.set("fx.results", Object.fromEntries(Object.entries(results).filter(([, r]) => r.status !== "loading"))), [results]);
   useEffect(() => store.set("fx.aiFile", file), [file]);
 
   if (!ai.length) return (
@@ -952,8 +950,10 @@ function App() {
   const [keys, setKeys] = useState({});
   const [strategies, setStrategies] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [results, setResults] = useState(() => store.get("fx.results", {}));  // paid Claude runs: never unmount these
   const [confirmEl, confirm] = useConfirm();
   useEffect(() => store.set("fx.tab", tab), [tab]);
+  useEffect(() => store.set("fx.results", Object.fromEntries(Object.entries(results).filter(([, r]) => r.status !== "loading"))), [results]);
 
   const toast = useCallback((text, kind = "info") => {
     const id = Math.random();
@@ -970,7 +970,7 @@ function App() {
     ["add", "Add strategy"],
     ["scanner", "Scanner & Telegram"],
   ];
-  const props = { strategies: list, reload, toast, confirm, goAdd: () => setTab("add"), goStrategies: () => setTab("strategies") };
+  const props = { strategies: list, reload, toast, confirm, results, setResults, goAdd: () => setTab("add"), goStrategies: () => setTab("strategies") };
 
   return (
     <>
